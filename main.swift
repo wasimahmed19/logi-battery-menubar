@@ -17,6 +17,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
             DispatchQueue.main.asyncAfter(deadline: .now() + 5) { self?.refresh() }
         }
+        // Turn on Open at Login the first time the app runs; after that, respect the user's choice.
+        let key = "loginItemConfigured"
+        if !UserDefaults.standard.bool(forKey: key) {
+            do { try SMAppService.mainApp.register() } catch { NSLog("Login item register failed: \(error)") }
+            UserDefaults.standard.set(true, forKey: key)
+        }
     }
 
     private func symbol(for name: String) -> String {
@@ -85,8 +91,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         m.addItem(withTitle: "Refresh Now", action: #selector(refresh), keyEquivalent: "r").target = self
         let login = NSMenuItem(title: "Open at Login", action: #selector(toggleLogin), keyEquivalent: "")
         login.target = self
-        login.state = SMAppService.mainApp.status == .enabled ? .on : .off
+        let status = SMAppService.mainApp.status
+        login.state = status == .enabled ? .on : .off
         m.addItem(login)
+        if status == .requiresApproval {
+            let approve = NSMenuItem(title: "Allow Open at Login in System Settings…", action: #selector(openLoginSettings), keyEquivalent: "")
+            approve.target = self
+            m.addItem(approve)
+        }
         m.addItem(.separator())
         m.addItem(withTitle: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
     }
@@ -96,7 +108,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if SMAppService.mainApp.status == .enabled { try SMAppService.mainApp.unregister() }
             else { try SMAppService.mainApp.register() }
         } catch { NSLog("Login item error: \(error)") }
+        if SMAppService.mainApp.status == .requiresApproval { SMAppService.openSystemSettingsLoginItems() }
     }
+
+    @objc func openLoginSettings() { SMAppService.openSystemSettingsLoginItems() }
 }
 
 let app = NSApplication.shared
