@@ -36,7 +36,8 @@ It runs fine alongside Logi Options+; you don't need Options+ installed at all.
 2. Move **Logi Battery.app** to your Applications folder
 3. The app isn't notarized by Apple, so the first time, **right-click it → Open → Open**
    (or run `xattr -dr com.apple.quarantine "/Applications/Logi Battery.app"`)
-4. Click the battery reading in the menu bar and turn on **Open at Login**
+4. It turns on **Open at Login** automatically the first time it runs (you can switch it off in its menu).
+   If macOS asks, allow it under **System Settings → General → Login Items & Extensions**
 
 ### Build from source
 
